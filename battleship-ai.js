@@ -21,9 +21,20 @@ var shipDetails = [
 				{name: "Battleship", shipLength: 4},
 				{name: "Submarine", shipLength: 3},
 				{name: "Cruiser", shipLength: 2},
-				{name: "cruiser", shipLength: 2}
+				{name: "Cruiser", shipLength: 2}
 				]
+/*
+var Carrier = new Ship("Carrier", 5);
+var Battleship = new Ship("Battleship", 4);
+var Submarine = new Ship("Submarine", 3);
 
+Carrier.locations = ["00", "01", "02", "03", "04"];
+Carrier.hits = [0,0,0,0,0];
+Battleship.locations = ["55", "56", "57", "58"];
+Battleship.hits = [0,0,0,0];
+Submarine.locations = ["97", "87", "77"];
+Submarine.hits = [0,0,0];
+*/
 
 //Model: keeping the game's state
 var model = {
@@ -317,11 +328,6 @@ var Raymond = {
 		}
 	},
 
-	//reset Raymond
-	reset: function() {
-		this.fired = [];
-	},
-
 	//guess: need to randomise ties
 	guess: function() {
 		var maxValue = Number.MIN_SAFE_INTEGER;
@@ -343,16 +349,16 @@ var Raymond = {
 	//update probabilities array after each shot
 	//remove even if hit because hunt mode will sink ship
 	updateProbabilities: function(location) {
-		console.log(location);
-		console.log("We update probabilities!");
+		//console.log(location);
+		//console.log("We update probabilities!");
 		var location = parseInt(location);
 		var currentLength;
 		var row = Math.floor(location / 10);
 		var col = location % 10;
 		var start;
 
-		console.log(row);
-		console.log(col);
+		//console.log(row);
+		//console.log(col);
 
 		for (var i = 0; i < model.ships.length; i++) {
 			currentLength = model.ships[i].shipLength;
@@ -379,56 +385,6 @@ var Raymond = {
 		}
 		this.probabilities[row][col] = Number.MIN_SAFE_INTEGER;
 	},
-
-	/*
-	//hunt mode: need to randomise guesses/need to stop when ship is Sunk/even parity
-	huntMode: function(location) {
-		var row;
-		var col;
-
-		var targets = [];
-		var locations = [];
-		var toBeUpdated = [];
-
-		var target;
-		var current;
-		locations.push(location);
-
-		while (locations.length != 0) {
-			current = locations.pop();
-			row = Math.floor(current / 10);
-			col = current % 10;
-
-			if ((row - 1) >= 0) {
-				targets.push((row - 1) + "" + col);
-			}
-			if ((row + 1) <= (this.Row - 1)) {
-				targets.push((row + 1) + "" + col);
-			}
-			if ((col - 1) >= 0) {
-				targets.push(row + "" + (col - 1));
-			}
-			if ((col + 1) <= (this.Col - 1)) {
-				targets.push(row + "" + (col + 1));
-			}
-			
-			//fire 
-			while (targets.length != 0) {
-				target = targets.pop();
-				toBeUpdated.push(target);
-				if (model.fire(target)) {
-					//locations.push(target);
-					//this.huntMode(target);
-				}
-			}
-		}
-		//update all probability after
-		while (toBeUpdated.length != 0) {
-			this.updateProbabilities(toBeUpdated.pop());
-		}
-		
-	},
-	*/
 
 	//used in conjunction with huntMode2
 	isShip: function(location) {
@@ -505,12 +461,15 @@ var Raymond = {
 		var ship;
 		var length;
 		var currentSunk = this.sunk.length;
+		var numberOfHits = 0;
 
+		var hits = [];
 		var probabilities = [];
 		var toBeUpdated = [];
 		var locations = [];
 		var firedToBeUpdated = [];
 
+		hits.push(location);
 		firedToBeUpdated.push(location);
 		locations.push(location);
 		toBeUpdated.push(location);
@@ -524,7 +483,7 @@ var Raymond = {
 		}
 		//continue until we sink one ship
 		while (this.sunk.length === currentSunk) {
-			console.log("hunting");
+			//console.log("hunting");
 			//update if there is a need to; after a hit
 			if (locations.length != 0) {
 				this.printProbabilities1(probabilities);
@@ -538,17 +497,17 @@ var Raymond = {
 					if (this.sunk.indexOf(ship) >= 0) {
 						continue;
 					}
-					length = ship.shipLength;
+					length = ship.shipLength - numberOfHits;
 					//check if location has already been hit
 					//vertical
 					for (var j = 0; j < length; j++) {
-						console.log("length: " + length);
-						console.log("j: " + j);
+						//console.log("length: " + length);
+						//console.log("j: " + j);
 						//check if it is within the square
 						if (((row + j) < this.Row) && ((row + j - length + 1) >= 0)) {
 							//check and update if possible
 							if (this.huntCheckPossibleVertical((row + j), col, length)) {
-								console.log("hit add vertical: " + (row + j) + col);
+								//console.log("hit add vertical: " + (row + j) + col);
 								this.huntUpdatePossibilitiesVertical(row + j, col, probabilities, current,length);
 							}
 						}
@@ -559,7 +518,7 @@ var Raymond = {
 						if (((col + j) < this.Col) && ((col + j - length + 1) >= 0)) {
 							//check and update if possible
 							if (this.huntCheckPossibleHorizontal(row, (col + j), length)) {
-								console.log("hit add horizontal: " + row + + (col + j));
+								//console.log("hit add horizontal: " + row + + (col + j));
 								this.huntUpdatePossibilitiesHorizontal(row, (col + j), probabilities, current, length);
 							}
 						}
@@ -572,19 +531,19 @@ var Raymond = {
 
 			//choose probability to fire
 			current = this.guessHunt(probabilities);
-			console.log(current);
+			//console.log(current);
 			toBeUpdated.push(current);
 			//if hit we update the probabilities
 			if (model.fire(current)) {
+				hits.push(current);
 				locations.push(current);
+				numberOfHits++;
 				firedToBeUpdated.push(current);
 			}	
 			else {
 				//update for misses
-				this.printProbabilities1(probabilities);
 				this.fired.push(current);
-				this.huntUpdateMisses(probabilities, current);
-				this.printProbabilities1(probabilities);
+				this.huntUpdateMisses(probabilities, current, hits);
 			}
 		}
 		//update hit locations in global fired
@@ -616,42 +575,63 @@ var Raymond = {
 	},
 
 	//update misses
-	huntUpdateMisses: function(probabilities, location) {
+	huntUpdateMisses: function(probabilities, location, hits) {
 		this.printProbabilities1(probabilities);
+		
 		var row = Math.floor(location / 10);
 		var col = location % 10;
-		var length;
+		var length = 0;
 		var start;
-
+		console.log("row: " + row);
+		console.log("col: " + col);
 		for (var i = 0; i < model.numsShips; i++) {
-			ship = model.ships[i];
-			//if ship has been sunk, we ignore its possibility
-			if (this.sunk.indexOf(ship) >= 0) {
-				continue;
+			if (Raymond.sunk.indexOf(model.ships[i]) < 0 && model.ships[i].shipLength > length) {
+				length = model.ships[i].shipLength;
 			}
-			length = ship.shipLength;
-			//horizontal
-			for (var j = 0; j < length; j++) {
-				start = col - j;
-				if ((start >= 0) && ((start + length - 1) <= (this.Col - 1))) {
-					for (var k = 0; k < length; k++) {
-						//console.log("update" + row + "" + (start + k));
-						probabilities[row][start + k]--;
-					}	
-				}
-			}
-			//vertical
-			for (var j = 0; j < length; j++) {
-				start = row - j;
-				if ((start >= 0) && ((start + length - 1) <= (this.Row - 1))) {
-					for (var k = 0; k < length; k++) {
-						probabilities[start + k][col]--;
-					}	
+		}
+		console.log(length);
+		//down vertical	
+		if (hits.indexOf((row - 1) + "" + col) >= 0) {
+			
+			for (var i = 1; i < length; i++) {
+				if((row + i) < this.Row) {
+					probabilities[row + i][col] = -1000;
+					console.log("down");
 				}
 			}
 		}
+		//up vertical
+		else if (hits.indexOf((row + 1) + "" + col) >= 0) {
+			console.log('here');
+			for (var i = 1; i < length; i++) {
+				console.log(row - i);
+				if((row - i) >= 0) {
+					probabilities[row - i][col] = -1000;
+					console.log("up");
+				}
+			}
+		}
+		//right horizontal
+		else if (hits.indexOf(row + "" + (col - 1)) >= 0) {
+			for (var i = 1; i < length; i++) {
+				if((col + i) < this.Col) {
+					probabilities[row][col + i] = -1000;
+					console.log("right");
+				}
+			}
+		}
+		//left horizontal
+		else if (hits.indexOf(row + "" + (col + 1)) >= 0) {
+			for (var i = 1; i < length; i++) {
+				if((col - i) >= 0) {
+					probabilities[row][col - i] = -1000;
+					console.log("left");
+				}
+			}
+		}
+
 		probabilities[row][col] = -1000;
-		console.log("hello");
+		//console.log("hello");
 		this.printProbabilities1(probabilities);
 	},
 
@@ -665,7 +645,7 @@ var Raymond = {
 			//console.log((row - i) + "" + col);
 			//check if already hit
 			if (this.fired.indexOf((row - i) + "" + col) >= 0) {
-				console.log("hunt check vertical: " + (row - i) + col);
+				//console.log("hunt check vertical: " + (row - i) + col);
 				return false;
 			}
 		}
@@ -681,7 +661,7 @@ var Raymond = {
 			//console.log(row + "" + (col - i));
 			//check if already hit
 			if (this.fired.indexOf(row + "" +  (col - i)) >= 0) {
-				console.log("hunt check horizontal: " + row + (col - i));
+				//console.log("hunt check horizontal: " + row + (col - i));
 				return false;
 			}
 		}
@@ -712,41 +692,6 @@ var Raymond = {
 		}
 	},
 
-	/*
-	for (var i = 0; i < length; i++) {
-			x = row + i;
-			y = col;
-			console.log("base: " + x + "" + y);
-			for (var j = 0; j < length; j++) {
-				console.log("checking: " + (x - j) + "" + y);
-				//note we skip the original location because it is already a hit
-				if (x === row && y === col) {
-					continue;
-				}
-				if (this.fired.indexOf((x - j) + "" + y) >= 0) {
-					return false;
-				}
-			}
-		}
-		//horizontal
-		for (var i = 0; i < length; i++) {
-			x = row;
-			y = col + i;
-			console.log("base: " + x + "" + y);
-			for (var j = 0; j < length; j++) {
-				console.log("checking: " + x + "" + (y - j));
-				//note we skip the original location because it is already a hit
-				if (x === row && y === col) {
-					continue;
-				}
-				if (this.fired.indexOf(x + "" +  (y - j)) >= 0) {
-					return false;
-				}
-			}
-		}
-		return true;
-		*/
-
 	//play the Game: Raymond calculate the probabilities and takes a guess, updating if he misses
 	play: function() {
 		var hit;
@@ -754,7 +699,7 @@ var Raymond = {
 		location = this.guess();
 		hit = model.fire(location);
 		//this.fired.push(location);
-		if (hit) {
+		if (hit && Raymond.sunk.length != model.numsShips) {
 			this.huntMode3(location);
 		}
 		else {
@@ -763,6 +708,20 @@ var Raymond = {
 		}
 	},
 
+	fire1: function(location) {
+		var hit;
+		//var location;
+		//location = this.guess();
+		hit = model.fire(location);
+		//this.fired.push(location);
+		if (hit && Raymond.sunk.length != model.numsShips) {
+			this.huntMode3(location);
+		}
+		else {
+			this.fired.push(location);
+			this.updateProbabilities(location);
+		}
+	},
 	//check the probabilities array
 	printProbabilities: function() {
 		for (var i = 0; i < this.probabilities.length; i++) {
@@ -780,7 +739,7 @@ var Raymond = {
 		for (var i = 0; i < probabilities.length; i++) {
 			for (var j = 0; j < probabilities[i].length; j++) {
 				//current = current + this.probabilities[i][j] + " ";
-				current += probabilities[i][j] + "     ";
+				current += probabilities[i][j] + "  ";
 			}
 			current += "\n";
 		}
